@@ -1,1 +1,4 @@
 This is a Student Attendance Management System
+ It has Admin and Teacher login, Student Master (basic details), Class Master, Subject Master and Attendance recording and summary report.
+ 
+ It is made using PHP, jQuery and Ajax and Bootstrap for front end UI
