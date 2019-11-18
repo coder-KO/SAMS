@@ -4,28 +4,25 @@
 
 if(isset($_GET["action"]))
 {
-	include('database_connection.php');
-	require_once 'pdf.php';
+	include('admin/database_connection.php');
+	require_once 'admin/pdf.php';
 	session_start();
-	$output = '';
-	if($_GET["action"] == 'attendance_report')
+	if($_GET["action"] == "attendance_report")
 	{
-		if(isset($_GET["grade_id"], $_GET["from_date"], $_GET["to_date"]))
+		if(isset($_GET["from_date"], $_GET["to_date"]))
 		{
 			$pdf = new Pdf();
 			$query = "
-			SELECT tbl_attendance.attendance_date FROM tbl_attendance 
-			INNER JOIN tbl_student 
-			ON tbl_student.student_id = tbl_attendance.student_id 
-			WHERE tbl_student.student_grade_id = '".$_GET["grade_id"]."' 
-			AND (tbl_attendance.attendance_date BETWEEN '".$_GET["from_date"]."' AND '".$_GET["to_date"]."')
-			GROUP BY tbl_attendance.attendance_date 
-			ORDER BY tbl_attendance.attendance_date ASC
+			SELECT attendance_date FROM tbl_attendance 
+			WHERE teacher_id = '".$_SESSION["teacher_id"]."' 
+			AND (attendance_date BETWEEN '".$_GET["from_date"]."' AND '".$_GET["to_date"]."')
+			GROUP BY attendance_date 
+			ORDER BY attendance_date ASC
 			";
 			$statement = $connect->prepare($query);
 			$statement->execute();
 			$result = $statement->fetchAll();
-			$output .= '
+			$output = '
 				<style>
 				@page { margin: 20px; }
 				
@@ -46,7 +43,6 @@ if(isset($_GET["action"]))
 			        				<td><b>Student Name</b></td>
 			        				<td><b>Roll Number</b></td>
 			        				<td><b>Grade</b></td>
-			        				<td><b>Teacher</b></td>
 			        				<td><b>Attendance Status</b></td>
 			        			</tr>
 				';
@@ -56,12 +52,9 @@ if(isset($_GET["action"]))
 			    ON tbl_student.student_id = tbl_attendance.student_id 
 			    INNER JOIN tbl_grade 
 			    ON tbl_grade.grade_id = tbl_student.student_grade_id 
-			    INNER JOIN tbl_teacher 
-			    ON tbl_teacher.teacher_grade_id = tbl_grade.grade_id 
-			    WHERE tbl_student.student_grade_id = '".$_GET["grade_id"]."' 
-				AND tbl_attendance.attendance_date = '".$row["attendance_date"]."'
+			    WHERE teacher_id = '".$_SESSION["teacher_id"]."' 
+				AND attendance_date = '".$row["attendance_date"]."'
 				";
-
 				$statement = $connect->prepare($sub_query);
 				$statement->execute();
 				$sub_result = $statement->fetchAll();
@@ -72,16 +65,16 @@ if(isset($_GET["action"]))
 						<td>'.$sub_row["student_name"].'</td>
 						<td>'.$sub_row["student_roll_number"].'</td>
 						<td>'.$sub_row["grade_name"].'</td>
-						<td>'.$sub_row["teacher_name"].'</td>
 						<td>'.$sub_row["attendance_status"].'</td>
 					</tr>
 					';
 				}
-				$output .= 
-					'</table>
+				$output .= '
+					</table>
 					</td>
 					</tr>
-				</table><br />';
+				</table><br />
+				';
 			}
 			$file_name = 'Attendance Report.pdf';
 			$pdf->loadHtml($output);
@@ -102,9 +95,11 @@ if(isset($_GET["action"]))
 			ON tbl_grade.grade_id = tbl_student.student_grade_id 
 			WHERE tbl_student.student_id = '".$_GET["student_id"]."' 
 			";
+
 			$statement = $connect->prepare($query);
 			$statement->execute();
 			$result = $statement->fetchAll();
+			$output = '';
 			foreach($result as $row)
 			{
 				$output .= '
@@ -146,7 +141,6 @@ if(isset($_GET["action"]))
 				AND (attendance_date BETWEEN '".$_GET["from_date"]."' AND '".$_GET["to_date"]."') 
 				ORDER BY attendance_date ASC
 				";
-
 				$statement = $connect->prepare($sub_query);
 				$statement->execute();
 				$sub_result = $statement->fetchAll();
@@ -165,8 +159,7 @@ if(isset($_GET["action"]))
 					</tr>
 				</table>
 				';
-
-				$file_name = "Attendance Report.pdf";
+				$file_name = 'Attendance Report.pdf';
 				$pdf->loadHtml($output);
 				$pdf->render();
 				$pdf->stream($file_name, array("Attachment" => false));
@@ -175,5 +168,6 @@ if(isset($_GET["action"]))
 		}
 	}
 }
+
 
 ?>
